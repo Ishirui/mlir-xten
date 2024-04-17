@@ -263,6 +263,29 @@ OpFoldResult amd::xten_nn::QuantizeOp::fold(FoldAdaptor adaptor) {
   return dequantizeInput;
 }
 
+OpFoldResult amd::xten_nn::GroupQuantizeOp::fold(FoldAdaptor adaptor) {
+  // Fold away cases where a xten_nn.group_quantize is preceeded by xten_nn.group_dequantize
+  // that uses the same shift factor and has same types.
+
+  auto dequantizeOp =
+      dyn_cast_or_null<amd::xten_nn::GroupDequantizeOp>(getInput().getDefiningOp());
+  if (!dequantizeOp)
+    return {};
+
+  if (!dequantizeOp->hasOneUse())
+    return {};
+  if (dequantizeOp.getScales() != getScales())
+    return {};
+  if (dequantizeOp.getZeros() != getZeros())
+    return {};
+
+  auto dequantizeInput = dequantizeOp.getQuants();
+  if (dequantizeInput.getType() != getType())
+    return {};
+
+  return dequantizeInput;
+}
+
 void amd::xten_nn::XTenNNDialect::registerOps() {
   addOperations<
 #define GET_OP_LIST
@@ -293,6 +316,64 @@ LogicalResult amd::xten_nn::GroupConv2dOp::verify() {
     return emitOpError(
         "pad attribute expected to be a 2x2 i64 array. Eg: [[0, 1], [1, 0]]");
   }
+
+  return success();
+}
+
+LogicalResult amd::xten_nn::GroupQuantizeOp::verify() {
+  auto inputShape = cast<ShapedType>(getInput().getType()).getShape();
+  auto scalesShape = cast<ShapedType>(getScales().getType()).getShape();
+  auto zerosShape = cast<ShapedType>(getZeros().getType()).getShape();
+  auto quantsShape = cast<ShapedType>(getQuants().getType()).getShape();
+
+  if (inputShape != quantsShape) {
+    return emitOpError() << "input and quants must have the same shape (" << inputShape << " v " << quantsShape << ")";
+  }
+
+  if (scalesShape != zerosShape) {
+    return emitOpError() << "scales and zeros must have the same shape (" << scalesShape << " v " << zerosShape << ")";
+  }
+
+  if (scalesShape.back() != 1) {
+    return emitOpError() << "groups needs to be expressed in the innermost dimension of scales vs quants (" << scalesShape.back() << ")" ;
+  }
+
+  if (scalesShape.drop_back() != quantsShape.drop_back()) {
+    return emitOpError() << "scales and quants must have the same shape except for the innermost dimension (" << scalesShape << " v " << quantsShape << ")";
+  }
+
+  // TODO validate:
+  // - bits can contain range [min, max].
+  // - quant dtype is at least bits wide.
+
+  return success();
+}
+
+LogicalResult amd::xten_nn::GroupDequantizeOp::verify() {
+  auto outputShape = cast<ShapedType>(getOutput().getType()).getShape();
+  auto scalesShape = cast<ShapedType>(getScales().getType()).getShape();
+  auto zerosShape = cast<ShapedType>(getZeros().getType()).getShape();
+  auto quantsShape = cast<ShapedType>(getQuants().getType()).getShape();
+
+  if (outputShape != quantsShape) {
+    return emitOpError() << "output and quants must have the same shape (" << outputShape << " v " << quantsShape << ")";
+  }
+
+  if (scalesShape != zerosShape) {
+    return emitOpError() << "scales and zeros must have the same shape (" << scalesShape << " v " << zerosShape << ")";
+  }
+
+  if (scalesShape.back() != 1) {
+    return emitOpError() << "groups needs to be expressed in the innermost dimension of scales vs quants (" << scalesShape.back() << ")" ;
+  }
+
+  if (scalesShape.drop_back() != quantsShape.drop_back()) {
+    return emitOpError() << "scales and quants must have the same shape except for the innermost dimension (" << scalesShape << " v " << quantsShape << ")";
+  }
+
+  // TODO validate:
+  // - bits can contain range [min, max].
+  // - quant dtype is at least bits wide.
 
   return success();
 }
