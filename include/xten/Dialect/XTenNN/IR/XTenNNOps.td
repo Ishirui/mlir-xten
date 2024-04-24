@@ -166,6 +166,72 @@ def XTenNN_DequantizeOp: XTenNN_Op<"dequantize", [
   let assemblyFormat = [{ `(`$input `:` type($input)`)` attr-dict `->` type($output) }];
 }
 
+def XTenNN_GroupQuantizeOp: XTenNN_Op<"group_quantize", [
+            Pure]> {
+  let summary = "Group quantizes a float32 tensor to an integer tensor of given width.";
+  let description = [{
+    Quantizes a given float32 tensor into a integer tensor of given width.
+
+    Scales and zeros must have a shape that is broadcastable to the input shape.
+    Input and scales most have the same dtype, as must zeros and quants.
+    The range of values in zeros and quants is given by the min and max attributes,
+    and the bits attribute gives the number of integer bits required for that range.
+
+    Applies the following linear quantization:
+      quants[a][b][c] = round( (input[a][b][c] / scales[a][b][c]) + zeros[a][b][c] )
+
+    Round will saturate to the range of the output type and the rounding mode is set to half
+    to nearest even.
+  }];
+
+  let arguments = (ins
+    F32Tensor:$input,
+    F32Tensor:$scales,
+    XTenNN_AnyTensorSignlessOrUnsignedInteger:$zeros,
+    SI32Attr:$min,
+    SI32Attr:$max,
+    SI32Attr:$bits
+);
+
+  let results = (outs XTenNN_AnyTensorSignlessOrUnsignedInteger:$quants);
+
+  let assemblyFormat = [{ `(`$input `:` type($input) `,` $scales `:` type($scales) `,` $zeros `:` type($zeros)`)` attr-dict `->` type($quants) }];
+
+  let hasFolder = 1;
+  let hasVerifier = 1;
+}
+
+def XTenNN_GroupDequantizeOp: XTenNN_Op<"group_dequantize", [
+            Pure]> {
+  let summary = "Group dequantizes an integer tensor of given width to a float32 tensor.";
+  let description = [{
+    Dequantizes an integer tensor of given width to a float32 tensor.
+    
+    Scales and zeros must have a shape that is broadcastable to the quants shape.
+    Output and scales most have the same dtype, as must zeros and quants.
+    The range of values in zeros and quants is given by the min and max attributes,
+    and the bits attribute gives the number of integer bits required for that range.
+
+    Applies the following linear dequantization to the input tensor x:
+      output[a][b][c] = (quants[a][b][c] - zeros[a][b][c]) * scales[a][b][c]
+  }];
+
+  let arguments = (ins
+    XTenNN_AnyTensorSignlessOrUnsignedInteger:$quants,
+    F32Tensor:$scales,
+    XTenNN_AnyTensorSignlessOrUnsignedInteger:$zeros,
+    SI32Attr:$min,
+    SI32Attr:$max,
+    SI32Attr:$bits
+  );
+
+  let results = (outs F32Tensor:$output);
+
+  let assemblyFormat = [{ `(`$quants `:` type($quants) `,` $scales `:` type($scales)`,` $zeros `:` type($zeros)`)` attr-dict `->` type($output) }];
+
+  let hasVerifier = 1;
+}
+
 def XTenNN_LoadExternalConstOp: XTenNN_Op<"load_external_const", [
             Pure]> {
   let summary = "Loads a constant from an external h5 file to a const operator.";
