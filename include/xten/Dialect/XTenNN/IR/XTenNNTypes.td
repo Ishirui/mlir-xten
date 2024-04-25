@@ -18,4 +18,9 @@ def XTenNN_AnyTensorSignlessOrUnsignedInteger : TensorOf<
     [], 
     "signless-or-unsigned-tensor">;
 
+def XTenNN_AnyTensorFloat : TensorOf<
+    [AnyFloat],
+    [],
+    "signless-or-unsigned-tensor">;
+
 #endif // XTENNN_TYPES
