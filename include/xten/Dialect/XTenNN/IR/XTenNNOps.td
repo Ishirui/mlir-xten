@@ -185,8 +185,8 @@ def XTenNN_GroupQuantizeOp: XTenNN_Op<"group_quantize", [
   }];
 
   let arguments = (ins
-    F32Tensor:$input,
-    F32Tensor:$scales,
+    XTenNN_AnyTensorFloat:$input,
+    XTenNN_AnyTensorFloat:$scales,
     XTenNN_AnyTensorSignlessOrUnsignedInteger:$zeros,
     SI32Attr:$min,
     SI32Attr:$max,
@@ -218,14 +218,14 @@ def XTenNN_GroupDequantizeOp: XTenNN_Op<"group_dequantize", [
 
   let arguments = (ins
     XTenNN_AnyTensorSignlessOrUnsignedInteger:$quants,
-    F32Tensor:$scales,
+    XTenNN_AnyTensorFloat:$scales,
     XTenNN_AnyTensorSignlessOrUnsignedInteger:$zeros,
     SI32Attr:$min,
     SI32Attr:$max,
     SI32Attr:$bits
   );
 
-  let results = (outs F32Tensor:$output);
+  let results = (outs XTenNN_AnyTensorFloat:$output);
 
   let assemblyFormat = [{ `(`$quants `:` type($quants) `,` $scales `:` type($scales)`,` $zeros `:` type($zeros)`)` attr-dict `->` type($output) }];
 
