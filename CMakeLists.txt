@@ -112,8 +112,6 @@ include_directories(${XTEN_BINARY_DIR}/include)
 # TORCH_MLIR
 include_directories(${TORCH_MLIR_INCLUDE_DIRS})
 
-link_directories(${PROJECT_BINARY_DIR}/../aie/lib/)
-
 add_definitions(${LLVM_DEFINITIONS})
 
 # Create a general check-all command to run both lit and unittests

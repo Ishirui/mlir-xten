@@ -14,6 +14,10 @@ include_directories(
 add_library(_xten SHARED
   XTenModule.cpp
 )
+if(MSVC)
+  target_compile_options(_xten PUBLIC "/EHsc")
+endif()
+
 set_target_properties(_xten PROPERTIES PREFIX "")
 get_property(dialect_libs GLOBAL PROPERTY MLIR_DIALECT_LIBS)
 get_property(conversion_libs GLOBAL PROPERTY MLIR_CONVERSION_LIBS)
