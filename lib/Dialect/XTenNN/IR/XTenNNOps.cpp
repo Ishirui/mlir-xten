@@ -401,7 +401,7 @@ LogicalResult amd::xten_nn::ResizeOp::verify() {
   }
 
   constexpr std::array coordinateTransformMode{
-      "half_pixel", "asymmetric", "align_corners", "pytorch_half_pixel"};
+      "half_pixel", "pytorch_half_pixel", "asymmetric", "align_corners"};
   if (getCoordinateTransformationMode() > coordinateTransformMode.size() - 1) {
     return emitOpError(getResizeInvalidModeOption(
         coordinateTransformMode, getCoordinateTransformationModeAttrName()));
