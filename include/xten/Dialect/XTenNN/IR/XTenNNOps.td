@@ -373,6 +373,7 @@ def XtenNN_ResizeOp: XTenNN_Op<"resize", [Pure, TosaExtension]> {
         - 0: half_pixel
         - 1: asymmetric
         - 2: align_corners
+        - 3: pytorch_half_pixel
       - Mode:
         - 0: Nearest
         - 1: Linear
