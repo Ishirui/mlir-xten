@@ -371,8 +371,9 @@ def XtenNN_ResizeOp: XTenNN_Op<"resize", [Pure, TosaExtension]> {
         - 1D vector with four values specifing the scale for the resize on each dimension
       - Cordinate Transformation Mode:
         - 0: half_pixel
-        - 1: asymmetric
-        - 2: align_corners
+        - 1: pytorch_half_pixel
+        - 2: asymmetric
+        - 3: align_corners
       - Mode:
         - 0: Nearest
         - 1: Linear
