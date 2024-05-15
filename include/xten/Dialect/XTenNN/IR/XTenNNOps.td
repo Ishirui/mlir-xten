@@ -310,13 +310,13 @@ def XtenNN_DepthToSpaceOp: XTenNN_Op<"depth_to_space", [Pure, TosaExtension]> {
     - 2: CRD: Elements rearranged in order Column - Row - Depth
   }];
   let arguments = (ins
-    4DTensorOf<[BF16, F32]>:$X,
+    4DTensorOf<[BF16, F32, I8]>:$X,
     I64Attr:$blocksize,
     I64Attr:$mode
   );
 
   let results = (outs
-    4DTensorOf<[BF16, F32]>:$Y
+    4DTensorOf<[BF16, F32, I8]>:$Y
   );
 
   let assemblyFormat = [{ operands attr-dict `:` functional-type(operands, results) }];
