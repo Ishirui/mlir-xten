@@ -320,6 +320,30 @@ def XtenNN_GridSampleOp: XTenNN_Op<"gridsample", [Pure]> {
   let hasVerifier = 1;
 }
 
+def XtenNN_DepthToSpaceOp: XTenNN_Op<"depth_to_space", [Pure, TosaExtension]> {
+  let summary = "Performs resizing to an image.";
+  let description = [{
+    Permutes data from depth into blocks of spatial data.
+    Outputs a copy of the input tensor where values from the depth dim are moved to the H and W dimension.
+    Blocksize: The size of the blocks being moved.
+    Mode:
+    - 1: DCR: Elements are rearranged in order Depth - Column - Row
+    - 2: CRD: Elements rearranged in order Column - Row - Depth
+  }];
+  let arguments = (ins
+    4DTensorOf<[BF16, F32]>:$X,
+    I64Attr:$blocksize,
+    I64Attr:$mode
+  );
+
+  let results = (outs
+    4DTensorOf<[BF16, F32]>:$Y
+  );
+
+  let assemblyFormat = [{ operands attr-dict `:` functional-type(operands, results) }];
+}
+
+
 def XtenNN_GroupConv2dOp: XTenNN_Op<"group_conv2d", [Pure, TosaExtension]> {
   let summary = "Grouped convolution with multiple channel outputs per layer";
   let description = [{
