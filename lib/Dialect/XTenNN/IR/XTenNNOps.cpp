@@ -94,9 +94,7 @@ static ParseResult parseCaptures(OpAsmParser &p,
 /// See parseCaptures() for more details.
 static void printCaptures(OpAsmPrinter &p, ValueRange srcs) {
   p << '(';
-  llvm::interleaveComma(srcs, p, [&](auto src) {
-    printCapture(p, src);
-  });
+  llvm::interleaveComma(srcs, p, [&](auto src) { printCapture(p, src); });
   p << ')';
 }
 
@@ -201,8 +199,7 @@ LogicalResult SubgraphOp::verify() {
   }
 
   // The type of the arguments must match the types of the block arguments
-  for (auto [idx, argType] :
-       enumerate(optBody->getArgumentTypes())) {
+  for (auto [idx, argType] : enumerate(optBody->getArgumentTypes())) {
     if (this->getCapture(idx).getType() != argType) {
       return this->emitOpError()
              << "type of operand #" << idx << " ("
@@ -264,11 +261,12 @@ OpFoldResult amd::xten_nn::QuantizeOp::fold(FoldAdaptor adaptor) {
 }
 
 OpFoldResult amd::xten_nn::GroupQuantizeOp::fold(FoldAdaptor adaptor) {
-  // Fold away cases where a xten_nn.group_quantize is preceeded by xten_nn.group_dequantize
-  // that uses the same shift factor and has same types.
+  // Fold away cases where a xten_nn.group_quantize is preceeded by
+  // xten_nn.group_dequantize that uses the same shift factor and has same
+  // types.
 
-  auto dequantizeOp =
-      dyn_cast_or_null<amd::xten_nn::GroupDequantizeOp>(getInput().getDefiningOp());
+  auto dequantizeOp = dyn_cast_or_null<amd::xten_nn::GroupDequantizeOp>(
+      getInput().getDefiningOp());
   if (!dequantizeOp)
     return {};
 
@@ -327,19 +325,25 @@ LogicalResult amd::xten_nn::GroupQuantizeOp::verify() {
   auto quantsShape = cast<ShapedType>(getQuants().getType()).getShape();
 
   if (inputShape != quantsShape) {
-    return emitOpError() << "input and quants must have the same shape (" << inputShape << " v " << quantsShape << ")";
+    return emitOpError() << "input and quants must have the same shape ("
+                         << inputShape << " v " << quantsShape << ")";
   }
 
   if (scalesShape != zerosShape) {
-    return emitOpError() << "scales and zeros must have the same shape (" << scalesShape << " v " << zerosShape << ")";
+    return emitOpError() << "scales and zeros must have the same shape ("
+                         << scalesShape << " v " << zerosShape << ")";
   }
 
   if (scalesShape.back() != 1) {
-    return emitOpError() << "groups needs to be expressed in the innermost dimension of scales vs quants (" << scalesShape.back() << ")" ;
+    return emitOpError() << "groups needs to be expressed in the innermost "
+                            "dimension of scales vs quants ("
+                         << scalesShape.back() << ")";
   }
 
   if (scalesShape.drop_back() != quantsShape.drop_back()) {
-    return emitOpError() << "scales and quants must have the same shape except for the innermost dimension (" << scalesShape << " v " << quantsShape << ")";
+    return emitOpError() << "scales and quants must have the same shape except "
+                            "for the innermost dimension ("
+                         << scalesShape << " v " << quantsShape << ")";
   }
 
   // TODO validate:
@@ -356,19 +360,25 @@ LogicalResult amd::xten_nn::GroupDequantizeOp::verify() {
   auto quantsShape = cast<ShapedType>(getQuants().getType()).getShape();
 
   if (outputShape != quantsShape) {
-    return emitOpError() << "output and quants must have the same shape (" << outputShape << " v " << quantsShape << ")";
+    return emitOpError() << "output and quants must have the same shape ("
+                         << outputShape << " v " << quantsShape << ")";
   }
 
   if (scalesShape != zerosShape) {
-    return emitOpError() << "scales and zeros must have the same shape (" << scalesShape << " v " << zerosShape << ")";
+    return emitOpError() << "scales and zeros must have the same shape ("
+                         << scalesShape << " v " << zerosShape << ")";
   }
 
   if (scalesShape.back() != 1) {
-    return emitOpError() << "groups needs to be expressed in the innermost dimension of scales vs quants (" << scalesShape.back() << ")" ;
+    return emitOpError() << "groups needs to be expressed in the innermost "
+                            "dimension of scales vs quants ("
+                         << scalesShape.back() << ")";
   }
 
   if (scalesShape.drop_back() != quantsShape.drop_back()) {
-    return emitOpError() << "scales and quants must have the same shape except for the innermost dimension (" << scalesShape << " v " << quantsShape << ")";
+    return emitOpError() << "scales and quants must have the same shape except "
+                            "for the innermost dimension ("
+                         << scalesShape << " v " << quantsShape << ")";
   }
 
   // TODO validate:
@@ -378,8 +388,8 @@ LogicalResult amd::xten_nn::GroupDequantizeOp::verify() {
   return success();
 }
 
-static std::string getResizeInvalidModeOption(ArrayRef<const char *> subOptions,
-                                              StringRef option) {
+static std::string getOpInvalidModeOption(ArrayRef<const char *> subOptions,
+                                          StringRef option) {
   std::string result;
   llvm::raw_string_ostream rso(result);
 
@@ -393,6 +403,21 @@ static std::string getResizeInvalidModeOption(ArrayRef<const char *> subOptions,
       .str();
 }
 
+LogicalResult amd::xten_nn::GridSampleOp::verify() {
+
+  constexpr std::array mode{"linear"};
+  if (getMode() > mode.size() - 1) {
+    return emitOpError(getOpInvalidModeOption(mode, getModeAttrName()));
+  }
+  constexpr std::array paddingMode{"zeros", "border"};
+  if (getPaddingMode() > paddingMode.size() - 1) {
+    return emitOpError(
+        getOpInvalidModeOption(paddingMode, getPaddingModeAttrName()));
+  }
+
+  return success();
+}
+
 LogicalResult amd::xten_nn::ResizeOp::verify() {
   auto scales = getScales();
   if (scales.size() != 4) {
@@ -403,18 +428,18 @@ LogicalResult amd::xten_nn::ResizeOp::verify() {
   constexpr std::array coordinateTransformMode{
       "half_pixel", "pytorch_half_pixel", "asymmetric", "align_corners"};
   if (getCoordinateTransformationMode() > coordinateTransformMode.size() - 1) {
-    return emitOpError(getResizeInvalidModeOption(
+    return emitOpError(getOpInvalidModeOption(
         coordinateTransformMode, getCoordinateTransformationModeAttrName()));
   }
   constexpr std::array mode{"Nearest", "Linear"};
   if (getMode() > mode.size() - 1) {
-    return emitOpError(getResizeInvalidModeOption(mode, getModeAttrName()));
+    return emitOpError(getOpInvalidModeOption(mode, getModeAttrName()));
   }
   constexpr std::array nearestMode{"floor", "round_prefer_ceil",
                                    "round_prefer_floor"};
   if (getNearestMode() > nearestMode.size() - 1) {
     return emitOpError(
-        getResizeInvalidModeOption(nearestMode, getNearestModeAttrName()));
+        getOpInvalidModeOption(nearestMode, getNearestModeAttrName()));
   }
 
   return success();

@@ -298,6 +298,28 @@ def XtenNN_CosOp: XTenNN_Op<"cos", [Pure, TosaExtension, ElementwiseUnary, SameO
   let assemblyFormat = [{ operands attr-dict `:` functional-type(operands, results) }];
 }
 
+def XtenNN_GridSampleOp: XTenNN_Op<"gridsample", [Pure]> {
+  let summary = "Performs gridsampling given an input and a flow-field grid.";
+  let description = [{
+    This operation is equivalent to `onnx.GridSample`.
+  }];
+  let arguments = (ins
+    XTenNN_AnyTensorFloat:$input,
+    XTenNN_AnyTensorFloat:$grid,
+    I64Attr:$align_corners,
+    I64Attr:$mode,
+    I64Attr:$padding_mode
+  );
+
+  let results = (outs
+    XTenNN_AnyTensorFloat:$output
+  );
+
+  let assemblyFormat = [{ operands attr-dict `:` functional-type(operands, results) }];
+
+  let hasVerifier = 1;
+}
+
 def XtenNN_GroupConv2dOp: XTenNN_Op<"group_conv2d", [Pure, TosaExtension]> {
   let summary = "Grouped convolution with multiple channel outputs per layer";
   let description = [{
